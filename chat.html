@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 기업분석 대시보드</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            height: 100vh;
+            color: white;
+            overflow: hidden;
+        }
+
+        .split-container {
+            display: flex;
+            height: 100vh;
+            position: relative;
+        }
+
+        .left-panel {
+            flex: 1;
+            min-width: 300px;
+            overflow-y: auto;
+            padding: 20px;
+            background: inherit;
+        }
+
+        .resizer {
+            width: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            cursor: col-resize;
+            position: relative;
+            transition: background 0.2s ease;
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .resizer:hover {
+            background: rgba(0, 212, 255, 0.3);
+        }
+
+        .resizer::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 3px;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+        }
+
+        .right-panel {
+            flex: 1;
+            min-width: 300px;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 대시보드 스타일 */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .ai-badge {
+            background: linear-gradient(45deg, #00d4ff, #0099cc);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+        }
+
+        .company-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(45deg, #ffffff, #00d4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .analysis-period {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-bottom: 8px;
+        }
+
+        .financial-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 20px; 
+            margin-bottom: 25px;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05));
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .metric-label {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            margin-bottom: 6px;
+        }
+
+        .metric-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #00d4ff;
+            margin-bottom: 4px;
+        }
+
+        .metric-change {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .change-positive {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+        }
+
+        .change-negative {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .chart-section {
+            margin-bottom: 20px;
+        }
+
+        .chart-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #00d4ff;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 200px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 15px;
+        }
+
+        .news-section {
+            margin-top: 20px;
+        }
+
+        .news-stats {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .news-stat {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .stat-positive { border-left: 3px solid #22c55e; }
+        .stat-neutral { border-left: 3px solid #64748b; }
+        .stat-negative { border-left: 3px solid #ef4444; }
+
+        .news-articles {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .news-item {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        .news-item:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .news-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #00d4ff;
+            line-height: 1.3;
+        }
+
+        .news-summary {
+            font-size: 0.75rem;
+            line-height: 1.4;
+            opacity: 0.9;
+            margin-bottom: 8px;
+        }
+
+        .news-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.7rem;
+            opacity: 0.7;
+        }
+
+        /* 채팅 스타일 */
+        .chat-header {
+            background: transparent;
+            padding: 40px 20px 20px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+        }
+
+        .chat-title {
+            color: white;
+            font-size: 2rem;
+            font-weight: 700;
+            text-align: center;
+            margin: 0;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: transparent;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            min-height: 0;
+        }
+
+        .messages-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+            flex-shrink: 0;
+            background: white;
+            color: #1e3c72;
+        }
+
+        .message.assistant .message-avatar {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 16px 20px;
+            border-radius: 20px;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        .message.user .message-content {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .message.assistant .message-content {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .chat-input-container {
+            padding: 30px 20px 40px 20px;
+            background: transparent;
+            border: none;
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .input-wrapper {
+            position: relative;
+            flex: 1;
+            max-width: 600px;
+        }
+
+        .chat-input {
+            width: 100%;
+            background: transparent;
+            border: 2px solid #00d4ff;
+            border-radius: 25px;
+            padding: 16px 60px 16px 20px;
+            color: white;
+            font-size: 1rem;
+            resize: none;
+            min-height: 20px;
+            max-height: 120px;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .chat-input:focus {
+            border-color: #00d4ff;
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.2);
+        }
+
+        .chat-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .send-button {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #00d4ff;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .send-button:hover {
+            background: #0099cc;
+            transform: translateY(-50%) scale(1.05);
+        }
+
+        .send-button:disabled {
+            background: rgba(255, 255, 255, 0.3);
+            cursor: not-allowed;
+            transform: translateY(-50%);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1rem;
+        }
+
+        .spinner {
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid #00d4ff;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            color: #ff6b6b;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .split-container {
+                flex-direction: column;
+            }
+            
+            .resizer {
+                display: none;
+            }
+            
+            .left-panel, .right-panel {
+                min-width: unset;
+                height: 50vh;
+            }
+            
+            .company-title {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="split-container">
+        <!-- 왼쪽 패널: 대시보드 -->
+        <div class="left-panel">
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                대시보드 데이터를 불러오는 중...
+            </div>
+
+            <div id="error" class="error-message" style="display: none;">
+                <!-- 에러 메시지 표시 -->
+            </div>
+
+            <div id="dashboard" style="display: none;">
+                <div class="header">
+                    <div class="ai-badge">홈으로 돌아가기</div>
+                    <h1 class="company-title" id="companyName">-</h1>
+                    <p class="analysis-period" id="analysisPeriod">-</p>
+                </div>
+
+                <!-- 재무 지표 카드 -->
+                <div class="financial-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">매출액</div>
+                        <div class="metric-value" id="revenue">-</div>
+                        <div class="metric-change" id="revenueChange">-</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">영업이익</div>
+                        <div class="metric-value" id="operatingProfit">-</div>
+                        <div class="metric-change" id="operatingChange">-</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">순이익</div>
+                        <div class="metric-value" id="netProfit">-</div>
+                        <div class="metric-change" id="netChange">-</div>
+                    </div>
+                </div>
+
+                <!-- 차트 -->
+                <div class="chart-section">
+                    <h3 class="chart-title">📈 매출 추이</h3>
+                    <div class="chart-container">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-section">
+                    <h3 class="chart-title">💰 수익성 추이</h3>
+                    <div class="chart-container">
+                        <canvas id="profitChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- 뉴스 섹션 -->
+                <div class="news-section">
+                    <h3 class="chart-title">📰 최신 뉴스</h3>
+                    <div class="news-stats" id="newsStats">
+                        <!-- 뉴스 통계 -->
+                    </div>
+                    <div class="news-articles" id="newsArticles">
+                        <!-- 뉴스 기사들 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 리사이저 -->
+        <div class="resizer"></div>
+
+        <!-- 오른쪽 패널: 채팅 -->
+        <div class="right-panel">
+            <div class="chat-header">
+                <h1 class="chat-title">아무거나 질문해보세요!</h1>
+            </div>
+
+            <div class="chat-messages" id="chatMessages">
+                <div class="messages-container" id="messagesContainer">
+                    <div class="message assistant">
+                        <div class="message-avatar">AI</div>
+                        <div class="message-content">
+                            안녕하세요! 저는 AI 재무분석 어시스턴트입니다. 🎯<br><br>
+                            왼쪽 대시보드에서 기업을 선택하시거나, 궁금한 기업명을 말씀해주시면 상세한 재무 분석을 도와드릴게요!<br><br>
+                            예시:<br>
+                            • "삼성전자 분석해줘"<br>
+                            • "애플 주가 어떤가요?"<br>
+                            • "투자 조언 부탁해요"
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-input-container">
+                <div class="input-wrapper">
+                    <textarea 
+                        id="chatInput" 
+                        class="chat-input" 
+                        placeholder="하태지와 에이아이들에게 물어보기"
+                        rows="1"></textarea>
+                    <button id="sendButton" class="send-button">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 🔧 Flask 서버 연동 설정
+        const API_BASE_URL = 'http://localhost:5001'; // Flask 서버 주소 (필요시 수정)
+        let currentDashboardData = null; // 현재 대시보드 데이터
+        let revenueChart = null;
+        let profitChart = null;
+
+        // 🔧 API 호출 함수
+        async function fetchDashboardData(corpCode, startYear = '2020', endYear = '2023') {
+            try {
+                console.log(`대시보드 데이터 요청: ${corpCode} (${startYear}-${endYear})`);
+                
+                const requestData = {
+                    corp_code: corpCode,
+                    bgn_de: startYear,
+                    end_de: endYear,
+                    user_sno: 'web_user',
+                    nickname: '웹사용자',
+                    difficulty: 'intermediate',
+                    interest: '기술주',
+                    purpose: '투자분석'
+                };
+
+                const response = await fetch(`${API_BASE_URL}/api/dashboard`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('대시보드 데이터 수신:', data);
+                return data;
+
+            } catch (error) {
+                console.error('대시보드 데이터 요청 실패:', error);
+                throw error;
+            }
+        }
+
+        async function sendChatMessage(message) {
+            try {
+                const requestData = {
+                    user_sno: 'web_user',
+                    nickname: '웹사용자',
+                    difficulty: 'intermediate',
+                    interest: '기술주',
+                    purpose: '투자분석',
+                    chat_type: currentDashboardData ? 'company_analysis' : 'general_chat',
+                    message: message
+                };
+
+                // 대시보드 데이터가 있으면 컨텍스트로 전달
+                if (currentDashboardData) {
+                    requestData.company_data = currentDashboardData;
+                }
+
+                const response = await fetch(`${API_BASE_URL}/api/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                return data.response;
+
+            } catch (error) {
+                console.error('채팅 메시지 전송 실패:', error);
+                return `죄송합니다. 현재 응답을 생성할 수 없습니다. (${error.message})`;
+            }
+        }
+
+        // 🔧 UI 헬퍼 함수들
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('dashboard').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function showError(message) {
+            const errorEl = document.getElementById('error');
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
+            document.getElementById('dashboard').style.display = 'none';
+            hideLoading();
+        }
+
+        function hideError() {
+            document.getElementById('error').style.display = 'none';
+        }
+
+        // 🔧 한국 원화 포맷팅
+        function formatKoreanWon(amount) {
+            if (!amount) return '0원';
+            const trillion = Math.floor(amount / 1000000000000);
+            const billion = Math.floor((amount % 1000000000000) / 100000000);
+            let result = '';
+            if (trillion > 0) result += `${trillion}조`;
+            if (billion > 0) result += `${billion}억원`;
+            if (result === '') result = '0원';
+            return result;
+        }
+
+        function calculateChange(current, previous) {
+            if (!previous || previous === 0) return { rate: 0, isPositive: true };
+            const change = ((current - previous) / previous) * 100;
+            return { rate: Math.abs(change).toFixed(1), isPositive: change >= 0 };
+        }
+
+        // 🔧 차트 생성 함수들
+        function createRevenueChart(data) {
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+            
+            // 기존 차트 삭제
+            if (revenueChart) {
+                revenueChart.destroy();
+            }
+            
+            revenueChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.yearly_trends.years,
+                    datasets: [{
+                        label: '매출액',
+                        data: data.yearly_trends.revenue.map(v => v / 1000000000000),
+                        borderColor: '#00d4ff',
+                        backgroundColor: 'rgba(0, 212, 255, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#00d4ff',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 1,
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.8)',
+                                callback: function(value) { return value + '조'; }
+                            },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        x: {
+                            ticks: { color: 'rgba(255, 255, 255, 0.8)' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createProfitChart(data) {
+            const ctx = document.getElementById('profitChart').getContext('2d');
+            
+            // 기존 차트 삭제
+            if (profitChart) {
+                profitChart.destroy();
+            }
+            
+            profitChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.yearly_trends.years,
+                    datasets: [
+                        {
+                            label: '영업이익',
+                            data: data.yearly_trends.operating_profit.map(v => v / 1000000000000),
+                            backgroundColor: 'rgba(0, 212, 255, 0.8)',
+                            borderRadius: 4
+                        },
+                        {
+                            label: '순이익',
+                            data: data.yearly_trends.net_profit.map(v => v / 1000000000000),
+                            backgroundColor: 'rgba(34, 197, 94, 0.8)',
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: 'rgba(255, 255, 255, 0.8)', font: { size: 10 } } }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.8)',
+                                callback: function(value) { return value + '조'; }
+                            },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        x: {
+                            ticks: { color: 'rgba(255, 255, 255, 0.8)' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 🔧 대시보드 렌더링 함수
+        function renderDashboard(data) {
+            try {
+                // 기본 정보 표시
+                document.getElementById('companyName').textContent = data.company_info.corp_name;
+                document.getElementById('analysisPeriod').textContent = `분석기간: ${data.company_info.analysis_period}`;
+
+                const trends = data.yearly_trends;
+                const currentYear = trends.years.length - 1;
+                const prevYear = currentYear - 1;
+
+                // 매출액
+                document.getElementById('revenue').textContent = formatKoreanWon(data.financial_summary.revenue);
+                if (prevYear >= 0) {
+                    const revenueChange = calculateChange(trends.revenue[currentYear], trends.revenue[prevYear]);
+                    const revenueChangeEl = document.getElementById('revenueChange');
+                    revenueChangeEl.textContent = `${revenueChange.isPositive ? '+' : '-'}${revenueChange.rate}%`;
+                    revenueChangeEl.className = `metric-change ${revenueChange.isPositive ? 'change-positive' : 'change-negative'}`;
+                }
+
+                // 영업이익
+                document.getElementById('operatingProfit').textContent = formatKoreanWon(data.financial_summary.operating_profit);
+                if (prevYear >= 0) {
+                    const operatingChange = calculateChange(trends.operating_profit[currentYear], trends.operating_profit[prevYear]);
+                    const operatingChangeEl = document.getElementById('operatingChange');
+                    operatingChangeEl.textContent = `${operatingChange.isPositive ? '+' : '-'}${operatingChange.rate}%`;
+                    operatingChangeEl.className = `metric-change ${operatingChange.isPositive ? 'change-positive' : 'change-negative'}`;
+                }
+
+                // 순이익
+                document.getElementById('netProfit').textContent = formatKoreanWon(data.financial_summary.net_profit);
+                if (prevYear >= 0) {
+                    const netChange = calculateChange(trends.net_profit[currentYear], trends.net_profit[prevYear]);
+                    const netChangeEl = document.getElementById('netChange');
+                    netChangeEl.textContent = `${netChange.isPositive ? '+' : '-'}${netChange.rate}%`;
+                    netChangeEl.className = `metric-change ${netChange.isPositive ? 'change-positive' : 'change-negative'}`;
+                }
+
+                // 뉴스 통계
+                const newsStats = document.getElementById('newsStats');
+                if (data.news_data.has_news) {
+                    newsStats.innerHTML = `
+                        <div class="news-stat stat-positive">긍정 ${data.news_data.summary_stats.positive_news}건</div>
+                        <div class="news-stat stat-neutral">중립 ${data.news_data.summary_stats.neutral_news}건</div>
+                        <div class="news-stat stat-negative">부정 ${data.news_data.summary_stats.negative_news}건</div>
+                    `;
+                } else {
+                    newsStats.innerHTML = '<div class="news-stat">뉴스 없음</div>';
+                }
+
+                // 뉴스 기사
+                const newsArticles = document.getElementById('newsArticles');
+                if (data.news_data.has_news && data.news_data.articles.length > 0) {
+                    newsArticles.innerHTML = data.news_data.articles.map(article => `
+                        <div class="news-item">
+                            <div class="news-title">${article.title}</div>
+                            <div class="news-summary">${article.summary}</div>
+                            <div class="news-meta">
+                                <span>${article.source}</span>
+                                <span>${article.published_date}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    newsArticles.innerHTML = '<div class="news-item">최근 뉴스가 없습니다.</div>';
+                }
+
+                // 차트 생성
+                createRevenueChart(data);
+                createProfitChart(data);
+
+                // 로딩 숨기고 대시보드 표시
+                hideLoading();
+                hideError();
+                document.getElementById('dashboard').style.display = 'block';
+
+            } catch (error) {
+                console.error('대시보드 렌더링 실패:', error);
+                showError(`대시보드 렌더링 중 오류가 발생했습니다: ${error.message}`);
+            }
+        }
+
+        // 🌟 외부에서 호출할 수 있는 메인 함수
+        window.displayDashboard = async function(corpCode, startYear = '2020', endYear = '2023') {
+            console.log(`대시보드 표시 요청: ${corpCode}`);
+            
+            showLoading();
+            
+            try {
+                const dashboardData = await fetchDashboardData(corpCode, startYear, endYear);
+                currentDashboardData = dashboardData;
+                renderDashboard(dashboardData);
+                
+                console.log('대시보드 표시 완료');
+                
+            } catch (error) {
+                console.error('대시보드 표시 실패:', error);
+                showError(`대시보드 로드 실패: ${error.message}`);
+            }
+        };
+
+        // 🔧 리사이저 기능
+        let isResizing = false;
+
+        document.querySelector('.resizer').addEventListener('mousedown', function(e) {
+            isResizing = true;
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', stopResize);
+            e.preventDefault();
+        });
+
+        function handleMouseMove(e) {
+            if (!isResizing) return;
+            
+            const container = document.querySelector('.split-container');
+            const leftPanel = document.querySelector('.left-panel');
+            const rightPanel = document.querySelector('.right-panel');
+            
+            const containerRect = container.getBoundingClientRect();
+            const newLeftWidth = ((e.clientX - containerRect.left) / containerRect.width) * 100;
+            
+            if (newLeftWidth > 20 && newLeftWidth < 80) {
+                leftPanel.style.flex = `0 0 ${newLeftWidth}%`;
+                rightPanel.style.flex = `0 0 ${100 - newLeftWidth}%`;
+            }
+        }
+
+        function stopResize() {
+            isResizing = false;
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', stopResize);
+        }
+
+        // 🔧 채팅 기능
+        const chatMessages = document.getElementById('chatMessages');
+        const messagesContainer = document.getElementById('messagesContainer');
+        const chatInput = document.getElementById('chatInput');
+        const sendButton = document.getElementById('sendButton');
+
+        function addMessage(role, content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+            
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${role === 'user' ? '홍' : 'AI'}</div>
+                <div class="message-content">${content}</div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const message = chatInput.value.trim();
+            if (!message) return;
+            
+            // 사용자 메시지 추가
+            addMessage('user', message);
+            chatInput.value = '';
+            chatInput.style.height = 'auto';
+            
+            // 전송 버튼 비활성화
+            sendButton.disabled = true;
+            
+            // 로딩 메시지
+            addMessage('assistant', '분석 중입니다... 잠시만 기다려주세요! 🔍');
+            
+            try {
+                // Flask 서버로 메시지 전송
+                const response = await sendChatMessage(message);
+                
+                // 로딩 메시지 제거
+                const lastMessage = messagesContainer.lastElementChild;
+                if (lastMessage && lastMessage.textContent.includes('분석 중입니다')) {
+                    lastMessage.remove();
+                }
+                
+                // AI 응답 추가
+                addMessage('assistant', response);
+                
+            } catch (error) {
+                // 로딩 메시지 제거
+                const lastMessage = messagesContainer.lastElementChild;
+                if (lastMessage && lastMessage.textContent.includes('분석 중입니다')) {
+                    lastMessage.remove();
+                }
+                
+                // 에러 메시지 추가
+                addMessage('assistant', `죄송합니다. 현재 응답을 생성할 수 없습니다. 서버 연결을 확인해주세요. (${error.message})`);
+            } finally {
+                // 전송 버튼 활성화
+                sendButton.disabled = false;
+            }
+        }
+
+        sendButton.addEventListener('click', sendMessage);
+        
+        chatInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // 텍스트 영역 자동 크기 조정
+        chatInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+        });
+
+        // 🔧 초기화 (테스트용 샘플 데이터)
+        const sampleData = {
+            "company_info": {
+                "analysis_period": "2020-2023",
+                "corp_code": "00126380",
+                "corp_name": "삼성전자",
+                "latest_year": "2023"
+            },
+            "financial_summary": {
+                "net_profit": 15487100000000,
+                "operating_profit": 6566976000000,
+                "revenue": 258935494000000,
+                "total_assets": 455905980000000,
+                "total_debt": 92228115000000,
+                "total_equity": 363677865000000
+            },
+            "news_data": {
+                "articles": [
+                    {
+                        "id": 1,
+                        "published_date": "2025-07-31",
+                        "source": "더렉",
+                        "summary": "삼성전자는 2025년 2분기 매출 74조5700억원, 영업이익 4조6800억원을 기록했다. 매출은 전년 동기 대비 0.7% 증가했으나, 영업이익은 55.2% 감소했다.",
+                        "title": "삼성전자 2025년 2분기 실적발표 컨퍼런스콜 전문"
+                    },
+                    {
+                        "id": 2,
+                        "published_date": "2025-07-07",
+                        "source": "뉴스1",
+                        "summary": "삼성전자 주가는 2분기 실적 발표를 앞두고 1.42% 하락했다. 투자자들은 실적에 대한 불확실성으로 매도세를 보였다.",
+                        "title": "삼성전자, 2분기 실적 발표 앞두고 1%대 하락[핫종목]"
+                    },
+                    {
+                        "id": 3,
+                        "published_date": "2025-07-10",
+                        "source": "줌인베스트",
+                        "summary": "삼성전자 주가는 애플과의 칩 수주 소식으로 1.84% 상승했다. 2분기 실적 개선 기대감이 투자 심리에 긍정적으로 작용했다.",
+                        "title": "삼성전자, 애플과의 칩 수주 소식에 1.84% 상승"
+                    }
+                ],
+                "has_news": true,
+                "summary_stats": {
+                    "negative_news": 1,
+                    "neutral_news": 1,
+                    "positive_news": 1
+                },
+                "total_articles": 3
+            },
+            "yearly_trends": {
+                "net_profit": [26407832000000, 39907450000000, 55654077000000, 15487100000000],
+                "operating_profit": [35993876000000, 51633856000000, 43376630000000, 6566976000000],
+                "revenue": [236806988000000, 279604799000000, 302231360000000, 258935494000000],
+                "years": ["2020", "2021", "2022", "2023"]
+            }
+        };
+
+        // 🚀 페이지 로드 시 샘플 데이터로 시연 (개발용)
+        window.addEventListener('load', function() {
+            console.log('페이지 로드 완료 - 샘플 데이터로 시연');
+            setTimeout(() => {
+                currentDashboardData = sampleData;
+                renderDashboard(sampleData);
+                console.log('샘플 대시보드 표시 완료');
+            }, 1500);
+        });
+
+        // 🌟 디버깅용 헬퍼 함수들 (개발 중 콘솔에서 테스트 가능)
+        window.testDashboard = function(corpCode = '00126380') {
+            console.log(`테스트: ${corpCode} 대시보드 표시`);
+            displayDashboard(corpCode);
+        };
+
+        window.testChat = function(message = '이 회사 어떤가요?') {
+            console.log(`테스트 채팅: ${message}`);
+            addMessage('user', message);
+            sendChatMessage(message).then(response => {
+                addMessage('assistant', response);
+            }).catch(error => {
+                addMessage('assistant', `테스트 실패: ${error.message}`);
+            });
+        };
+
+        console.log('🔧 Flask 연동 대시보드 초기화 완료');
+        console.log('📋 사용 가능한 함수들:');
+        console.log('  - displayDashboard(corpCode, startYear, endYear): 대시보드 표시');
+        console.log('  - testDashboard(corpCode): 테스트용 대시보드 표시');
+        console.log('  - testChat(message): 테스트용 채팅');
+        console.log(`🌐 Flask 서버: ${API_BASE_URL}`);
+    </script>
+</body>
+</html>

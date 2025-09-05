@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  dart-mcp-server:
+    build: .
+    container_name: opencorpinsight-mcp
+    environment:
+      - DART_API_KEY=${DART_API_KEY}
+      - PYTHONPATH=/app/src
+      - DART_CACHE_DIR=/app/cache
+    volumes:
+      - ./cache:/app/cache
+      - ./logs:/app/logs
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+    networks:
+      - mcp-network
+
+  # Redis 캐시 (선택사항 - 향후 Redis 캐시 사용시)
+  redis:
+    image: redis:7-alpine
+    container_name: opencorpinsight-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - mcp-network
+    profiles:
+      - redis
+
+networks:
+  mcp-network:
+    driver: bridge
+
+volumes:
+  redis_data: 

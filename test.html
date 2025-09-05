@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flask API 테스트</title>
+    <style>
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        h2 {
+            color: #34495e;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #fafafa;
+        }
+        
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        button:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+        
+        input, select {
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .response {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .success {
+            border-left: 4px solid #27ae60;
+        }
+        
+        .error {
+            border-left: 4px solid #e74c3c;
+        }
+        
+        .loading {
+            color: #f39c12;
+            font-weight: bold;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: inline-block;
+            width: 120px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Flask Financial API 테스트</h1>
+        
+        <!-- 서버 설정 -->
+        <div class="test-section">
+            <h2>⚙️ 서버 설정</h2>
+            <div class="input-group">
+                <label>API 서버:</label>
+                <input type="text" id="serverUrl" value="http://localhost:5001" placeholder="http://localhost:5001">
+                <button onclick="testHealth()">연결 테스트</button>
+            </div>
+            <div id="healthResponse" class="response" style="display: none;"></div>
+        </div>
+
+        <!-- 일반 채팅 테스트 -->
+        <div class="test-section">
+            <h2>💬 일반 채팅 테스트</h2>
+            <div class="input-group">
+                <label>닉네임:</label>
+                <input type="text" id="nickname" value="테스터" placeholder="닉네임">
+            </div>
+            <div class="input-group">
+                <label>레벨:</label>
+                <select id="difficulty">
+                    <option value="beginner">초급</option>
+                    <option value="intermediate" selected>중급</option>
+                    <option value="advanced">고급</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>관심사:</label>
+                <input type="text" id="interest" value="기술주" placeholder="관심 분야">
+            </div>
+            <div class="input-group">
+                <label>목적:</label>
+                <input type="text" id="purpose" value="투자분석" placeholder="목적">
+            </div>
+            <div class="input-group">
+                <label>메시지:</label>
+                <input type="text" id="generalMessage" value="삼성전자에 대해 알려줘" placeholder="채팅 메시지" style="width: 300px;">
+                <button onclick="testGeneralChat()">일반 채팅 테스트</button>
+            </div>
+            <div id="generalChatResponse" class="response" style="display: none;"></div>
+        </div>
+
+        <!-- 대시보드 테스트 -->
+        <div class="test-section">
+            <h2>📊 대시보드 데이터 테스트</h2>
+            <div class="input-group">
+                <label>기업 코드:</label>
+                <input type="text" id="corpCode" value="삼성전자" placeholder="기업명 또는 코드">
+            </div>
+            <div class="input-group">
+                <label>시작 연도:</label>
+                <input type="text" id="startYear" value="2022" placeholder="2022">
+                <label>종료 연도:</label>
+                <input type="text" id="endYear" value="2023" placeholder="2023">
+                <button onclick="testDashboard()">대시보드 테스트</button>
+            </div>
+            <div id="dashboardResponse" class="response" style="display: none;"></div>
+        </div>
+
+        <!-- 기업 분석 채팅 테스트 -->
+        <div class="test-section">
+            <h2>🏢 기업 분석 채팅 테스트</h2>
+            <p style="color: #7f8c8d; font-style: italic;">먼저 대시보드 데이터를 가져온 후 테스트 가능합니다.</p>
+            <div class="input-group">
+                <label>질문:</label>
+                <input type="text" id="companyMessage" value="이 회사의 투자 가치는 어떤가요?" placeholder="기업 관련 질문" style="width: 300px;">
+                <button onclick="testCompanyChat()" id="companyChatBtn" disabled>기업 분석 채팅</button>
+            </div>
+            <div id="companyChatResponse" class="response" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        let dashboardData = null;
+
+        function getServerUrl() {
+            return document.getElementById('serverUrl').value;
+        }
+
+        function getUserInfo() {
+            return {
+                user_sno: "test123",
+                nickname: document.getElementById('nickname').value,
+                difficulty: document.getElementById('difficulty').value,
+                interest: document.getElementById('interest').value,
+                purpose: document.getElementById('purpose').value
+            };
+        }
+
+        function showResponse(elementId, data, isError = false) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = `response ${isError ? 'error' : 'success'}`;
+            element.textContent = JSON.stringify(data, null, 2);
+        }
+
+        function showLoading(elementId, message = '로딩 중...') {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = 'response loading';
+            element.textContent = message;
+        }
+
+        async function testHealth() {
+            showLoading('healthResponse', '서버 연결 테스트 중...');
+            
+            try {
+                const response = await fetch(`${getServerUrl()}/api/health`);
+                const data = await response.json();
+                showResponse('healthResponse', data);
+            } catch (error) {
+                showResponse('healthResponse', { error: error.message }, true);
+            }
+        }
+
+        async function testGeneralChat() {
+            showLoading('generalChatResponse', '일반 채팅 응답 생성 중...');
+            
+            try {
+                const userInfo = getUserInfo();
+                const message = document.getElementById('generalMessage').value;
+                
+                const response = await fetch(`${getServerUrl()}/api/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_type: 'general_chat',
+                        message: message,
+                        ...userInfo
+                    })
+                });
+                
+                const data = await response.json();
+                showResponse('generalChatResponse', data, !response.ok);
+                
+                // 팝업 신호가 있으면 알림
+                if (data.action_required) {
+                    alert(`🚨 팝업 신호 감지!\n타입: ${data.action_required.type}\nURL: ${data.action_required.popup_url}`);
+                }
+                
+            } catch (error) {
+                showResponse('generalChatResponse', { error: error.message }, true);
+            }
+        }
+
+        async function testDashboard() {
+            showLoading('dashboardResponse', '대시보드 데이터 생성 중...');
+            
+            try {
+                const userInfo = getUserInfo();
+                const corpCode = document.getElementById('corpCode').value;
+                const startYear = document.getElementById('startYear').value;
+                const endYear = document.getElementById('endYear').value;
+                
+                const response = await fetch(`${getServerUrl()}/api/dashboard`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        corp_code: corpCode,
+                        bgn_de: startYear,
+                        end_de: endYear,
+                        ...userInfo
+                    })
+                });
+                
+                const data = await response.json();
+                showResponse('dashboardResponse', data, !response.ok);
+                
+                if (response.ok) {
+                    dashboardData = data;
+                    document.getElementById('companyChatBtn').disabled = false;
+                    alert('✅ 대시보드 데이터 로드 성공! 이제 기업 분석 채팅을 테스트할 수 있습니다.');
+                }
+                
+            } catch (error) {
+                showResponse('dashboardResponse', { error: error.message }, true);
+            }
+        }
+
+        async function testCompanyChat() {
+            if (!dashboardData) {
+                alert('먼저 대시보드 데이터를 가져와주세요!');
+                return;
+            }
+            
+            showLoading('companyChatResponse', '기업 분석 답변 생성 중...');
+            
+            try {
+                const userInfo = getUserInfo();
+                const message = document.getElementById('companyMessage').value;
+                
+                const response = await fetch(`${getServerUrl()}/api/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_type: 'company_analysis',
+                        message: message,
+                        company_data: dashboardData,
+                        ...userInfo
+                    })
+                });
+                
+                const data = await response.json();
+                showResponse('companyChatResponse', data, !response.ok);
+                
+            } catch (error) {
+                showResponse('companyChatResponse', { error: error.message }, true);
+            }
+        }
+
+        // 페이지 로드 시 자동으로 헬스 체크
+        window.onload = function() {
+            testHealth();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "dart-mcp-server": {
+      "command": "python",
+      "args": ["/Users/choetaeyeong/projects/OpenCorpInsight/src/dart_mcp_server.py"],
+      "env": {
+        "PYTHONPATH": "/Users/choetaeyeong/projects/OpenCorpInsight/.venv/lib/python3.13/site-packages"
+      }
+    }
+  }
+} 
