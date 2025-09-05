@@ -32,11 +32,6 @@
 - **경쟁 분석**: 경쟁사 대비 포지션 분석 및 SWOT 분석
 - **업계 리포트**: 특정 업계의 종합 분석 리포트 생성
 
-### Phase 5 (예정) 🔄
-- **ESG 분석**: 환경, 사회, 지배구조 요소 분석
-- **리스크 모델링**: 고급 리스크 측정 및 스트레스 테스트
-- **AI 예측 모델**: 머신러닝 기반 성과 예측 모델
-
 ## 🚀 빠른 시작
 
 ### 자동 설치 (권장)
@@ -471,37 +466,9 @@ docker-compose --profile redis up -d
 3. 구현 함수 작성
 4. `tests/` 디렉터리에 테스트 추가
 
-### 코드 스타일
-
-- **Python**: PEP 8 준수
-- **타입 힌트**: 모든 함수에 타입 힌트 적용
-- **문서화**: Docstring 필수 작성
-- **테스트**: 최소 80% 코드 커버리지 유지
-
-## 🤝 기여하기
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
 ## 📄 라이선스
 
 이 프로젝트는 MIT 라이선스 하에 배포됩니다. 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
-
-## 🆘 지원
-
-- **이슈 리포트**: [GitHub Issues](https://github.com/yourusername/OpenCorpInsight/issues)
-- **문서**: [docs/](docs/) 디렉터리 참조
-- **API 문서**: [Open DART API 가이드](https://opendart.fss.or.kr/guide/main.do)
-
-## 📈 로드맵
-
-- [x] **Phase 1**: 기본 재무 도구 (완료)
-- [ ] **Phase 2**: 분석 및 뉴스 도구 (진행중)
-- [ ] **Phase 3**: 고급 분석 및 보고서 (계획)
-- [ ] **Phase 4**: 웹 인터페이스 및 대시보드 (미래)
 
 ---
 
@@ -524,20 +491,3 @@ export DART_API_KEY="your_40_character_api_key_here"
 ```env
 DART_API_KEY=your_40_character_api_key_here
 ```
-
-#### Perplexity MCP 연동 (Phase 2 기능)
-Phase 2의 뉴스 수집 및 분석 기능을 위해서는 Perplexity MCP가 필요합니다:
-
-1. **Perplexity MCP 설정**: 
-   - MCP 클라이언트(예: Claude Desktop)에서 Perplexity MCP 서버를 설정
-   - `mcp_perplexity-search_search` 함수가 사용 가능해야 함
-
-2. **현재 상태**:
-   - Perplexity 연동이 설정되지 않은 경우 Mock 데이터 사용
-   - 실제 뉴스 검색 기능을 위해서는 Perplexity MCP 설정 권장
-
-3. **설정 확인**:
-   ```bash
-   # MCP 서버 실행 후 뉴스 수집 테스트
-   python -c "from src.news_analyzer import news_analyzer; print('뉴스 분석기 준비 완료')"
-   ``` 
