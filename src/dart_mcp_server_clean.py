@@ -66,12 +66,12 @@ try:
     # 환경변수 로드 실패 시 하드코딩된 키 사용 (임시)
     if not env_loaded or not API_KEY:
         logger.warning("환경변수에서 API 키 로드 실패 - 하드코딩된 키 사용")
-        API_KEY = "4fde700d04b755c3dd2989a85b742aa35bf65062"
+        API_KEY = ""
         logger.info(f"하드코딩된 DART API 키 사용: {API_KEY[:10]}...")
         
 except ImportError:
     logger.warning("python-dotenv가 설치되지 않음 - 하드코딩된 키 사용")
-    API_KEY = "4fde700d04b755c3dd2989a85b742aa35bf65062"
+    API_KEY = ""
     logger.info(f"하드코딩된 DART API 키 사용: {API_KEY[:10]}...")
 
 # MCP 서버 생성 및 초기화
